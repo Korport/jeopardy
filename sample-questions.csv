@@ -1,0 +1,26 @@
+Category,Value,Question,Answer,DailyDouble
+Science,200,"This element has atomic number 79","Gold",false
+Science,400,"The speed of light in a vacuum (km/s)","300,000",false
+Science,600,"This scientist published the theory of general relativity","Einstein",false
+Science,800,"This organ produces insulin","Pancreas",false
+Science,1000,"The most abundant gas in Earth's atmosphere","Nitrogen",true
+History,200,"This war ended in 1945","World War II",false
+History,400,"This president signed the Emancipation Proclamation","Lincoln",false
+History,600,"The year the Berlin Wall fell","1989",false
+History,800,"This empire was ruled by Julius Caesar","Roman Empire",false
+History,1000,"The first country to give women the right to vote","New Zealand",false
+Geography,200,"The capital of France","Paris",false
+Geography,400,"The longest river in the world","Nile",false
+Geography,600,"This country has the most natural lakes","Canada",false
+Geography,800,"The smallest country in the world by area","Vatican City",false
+Geography,1000,"This mountain range contains Mount Everest","Himalayas",true
+Pop Culture,200,"This wizard lives at 4 Privet Drive","Harry Potter",false
+Pop Culture,400,"The highest-grossing film of all time (unadjusted)","Avatar",false
+Pop Culture,600,"This TV show features a chemistry teacher turned drug lord","Breaking Bad",false
+Pop Culture,800,"The band that sang Bohemian Rhapsody","Queen",false
+Pop Culture,1000,"This video game franchise has a character named Master Chief","Halo",false
+Sports,200,"The number of players on a basketball team on the court","5",false
+Sports,400,"This country has won the most FIFA World Cups","Brazil",false
+Sports,600,"The sport played at Wimbledon","Tennis",false
+Sports,800,"Michael Jordan played for this NBA team for most of his career","Chicago Bulls",false
+Sports,1000,"This swimmer won 23 Olympic gold medals","Michael Phelps",true
