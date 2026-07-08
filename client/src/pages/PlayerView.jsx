@@ -29,6 +29,30 @@ export default function PlayerView() {
   const [socketId, setSocketId] = useState(null);
   const [buzzing, setBuzzing] = useState(false);
   const socketRef = useRef(null);
+  const wakeLockRef = useRef(null);
+
+  // Keep the screen awake while on this page
+  useEffect(() => {
+    if (!('wakeLock' in navigator)) return;
+
+    async function acquire() {
+      try {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+      } catch (_) {}
+    }
+
+    // Browsers release the wake lock when the tab is hidden; re-acquire on return
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') acquire();
+    }
+
+    acquire();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      wakeLockRef.current?.release();
+    };
+  }, []);
 
   useEffect(() => {
     const s = io(SERVER_URL);
