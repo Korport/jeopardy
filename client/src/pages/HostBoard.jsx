@@ -354,12 +354,21 @@ export default function HostBoard() {
                         ✗ Wrong (−${q.value})
                       </button>
                     </>
-                  ) : (
+                  ) : gameState.buzzersLocked ? (
+                    /* Buzzers are locked — host hasn't opened them yet */
                     <button
                       onClick={unlockBuzzers}
+                      className="bg-green-600 hover:bg-green-500 text-white font-black px-8 py-3 rounded-xl transition-colors text-lg animate-pulse"
+                    >
+                      🔓 Open Buzzers
+                    </button>
+                  ) : (
+                    /* Buzzers are open but nobody has buzzed yet */
+                    <button
+                      onClick={() => emit('lock-buzzers')}
                       className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2.5 rounded-xl transition-colors"
                     >
-                      Reset Buzzers
+                      🔒 Lock Buzzers
                     </button>
                   )}
 

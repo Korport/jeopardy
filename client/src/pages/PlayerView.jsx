@@ -126,6 +126,13 @@ export default function PlayerView() {
             <p className="text-blue-400 text-lg">buzzed in first</p>
             <p className="text-blue-500 text-sm mt-3">Wait for the next opportunity…</p>
           </div>
+        ) : gameState?.buzzersLocked ? (
+          /* Host hasn't opened buzzers yet */
+          <div className="text-center">
+            <div className="text-7xl mb-4 animate-pulse">🔒</div>
+            <p className="text-blue-400 text-2xl font-bold mb-1">Stand by…</p>
+            <p className="text-blue-500 text-sm">Waiting for host to open buzzers</p>
+          </div>
         ) : (
           <button
             onClick={buzzIn}

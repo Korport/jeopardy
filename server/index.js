@@ -116,6 +116,11 @@ io.on('connection', (socket) => {
     broadcast();
   });
 
+  socket.on('lock-buzzers', () => {
+    state.buzzersLocked = true;
+    broadcast();
+  });
+
   socket.on('reveal-answer', () => {
     if (state.currentQuestion) {
       state.currentQuestion = { ...state.currentQuestion, answerRevealed: true };
@@ -130,7 +135,7 @@ io.on('connection', (socket) => {
     if (!question) return;
     state.currentQuestion = { ...question, answerRevealed: false };
     state.buzzedPlayer = null;
-    state.buzzersLocked = false;
+    state.buzzersLocked = true; // host must explicitly open buzzers
     broadcast();
   });
 
