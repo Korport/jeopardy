@@ -5,7 +5,19 @@ on a big screen (or shares it in Teams); players join from their phones by
 scanning a QR code or visiting the URL directly.
 
 One Node.js server handles both the API/WebSocket layer and serves the built
-React client. nginx sits in front on port 80 and proxies everything through.
+React client. nginx sits in front and proxies everything through.
+
+---
+
+## Live URLs
+
+| Purpose | URL |
+|---------|-----|
+| Host board | `https://microjeopardy.westus2.cloudapp.azure.com` |
+| Settings / upload | `https://microjeopardy.westus2.cloudapp.azure.com/settings` |
+| Players join | `https://microjeopardy.westus2.cloudapp.azure.com/join/SESSION-ID` |
+
+Players can also just scan the QR code displayed on the host board.
 
 ---
 
@@ -14,8 +26,8 @@ React client. nginx sits in front on port 80 and proxies everything through.
 ```
 Internet
    │
-   ▼ port 80
- nginx  (Azure VM)
+   ▼ ports 80 & 443 (HTTPS)
+ nginx  (Azure VM — microjeopardy.westus2.cloudapp.azure.com)
    │
    ▼ port 3001 (internal only)
  Node.js / Socket.io   (managed by PM2)
@@ -25,12 +37,41 @@ Internet
 
 ---
 
-## First-Time Server Setup
+## Deploying Updates
 
-### 1. SSH into your Azure VM
+After pushing changes to GitHub, SSH into the VM and run:
 
 ```bash
-ssh azureuser@YOUR-VM-PUBLIC-IP
+cd ~/jeopardy && git pull && npm run build && pm2 restart jeopardy
+```
+
+---
+
+## Checking Server Status
+
+```bash
+pm2 status                  # is the app running?
+pm2 logs jeopardy           # live logs (Ctrl+C to exit)
+sudo systemctl status nginx # is nginx running?
+```
+
+If the app is down after a VM reboot:
+
+```bash
+pm2 start server/index.js --name jeopardy
+sudo systemctl start nginx
+```
+
+---
+
+## First-Time Server Setup
+
+Only needed if setting up a new VM from scratch.
+
+### 1. SSH into the VM
+
+```bash
+ssh azureuser@microjeopardy.westus2.cloudapp.azure.com
 ```
 
 ### 2. Install Node.js
@@ -71,12 +112,12 @@ sudo apt-get install -y nginx
 sudo nano /etc/nginx/sites-available/jeopardy
 ```
 
-Paste this config (replace `YOUR-VM-PUBLIC-IP` with your actual IP):
+Paste this config:
 
 ```nginx
 server {
     listen 80;
-    server_name YOUR-VM-PUBLIC-IP;
+    server_name microjeopardy.westus2.cloudapp.azure.com;
 
     location / {
         proxy_pass http://localhost:3001;
@@ -102,70 +143,36 @@ sudo systemctl restart nginx
 sudo systemctl enable nginx
 ```
 
-### 7. Open port 80 in Azure
+### 7. Open ports 80 and 443 in Azure NSG
 
-In the Azure Portal:
-1. Go to your VM → **Networking** → **Network Security Group**
-2. Click **Add inbound port rule**
-3. Set Destination port to `80`, Protocol `TCP`, Action `Allow`
-4. Click **Add**
+In the Azure Portal → VM → **Networking** → **Network Security Group**:
+- Add inbound rule for port `80` (HTTP), TCP, Allow
+- Add inbound rule for port `443` (HTTPS), TCP, Allow
 
-### 8. Access the app
-
-Open a browser and go to:
-```
-http://YOUR-VM-PUBLIC-IP
-```
-
----
-
-## Deploying Updates (after pushing changes to GitHub)
-
-Whenever you push new code to GitHub, SSH into the VM and run:
+### 8. Add HTTPS with Let's Encrypt
 
 ```bash
-cd ~/jeopardy
-git pull
-npm run build
-pm2 restart jeopardy
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d microjeopardy.westus2.cloudapp.azure.com
+sudo certbot renew --dry-run   # confirm auto-renewal works
 ```
 
-One-liner version you can paste quickly:
-
-```bash
-cd ~/jeopardy && git pull && npm run build && pm2 restart jeopardy
-```
-
----
-
-## Checking Server Status
-
-```bash
-pm2 status                  # is the app running?
-pm2 logs jeopardy           # live logs (Ctrl+C to exit)
-sudo systemctl status nginx # is nginx running?
-```
-
-If the app is down after a VM reboot:
-
-```bash
-pm2 start server/index.js --name jeopardy
-sudo systemctl start nginx
-```
+Certbot edits the nginx config automatically. Certs renew every 90 days without any manual steps.
 
 ---
 
 ## How to Play
 
 ### Host (Teams meeting or big screen)
-1. Open `http://YOUR-VM-PUBLIC-IP` in your browser
+1. Open `https://microjeopardy.westus2.cloudapp.azure.com` in your browser
 2. Go to `/settings` to upload your CSV question file
 3. Share the browser tab in Teams
+4. Click a cell to open a question, read it aloud, then click **Open Buzzers**
 
 ### Players (phones)
-- Scan the QR code displayed on the board, or
-- Navigate to `http://YOUR-VM-PUBLIC-IP/join/SESSION-ID`
+- Scan the QR code on the board, or go to the join URL directly
 - Enter a name and tap **Join Game**
+- If you accidentally refresh, the app rejoins you automatically with your score intact
 
 ---
 
@@ -184,19 +191,6 @@ Science,600,"Speed of light in km/s","300000",true
 | Value | Integer (200, 400, 600, 800, 1000) |
 | Question | The clue. Wrap in quotes if it contains commas. |
 | Answer | Shown when host clicks Reveal Answer |
-| DailyDouble | `true` or `false` — marks cell with ⭐, prompts for wager |
+| DailyDouble | `true` or `false` — marks cell with ⭐, prompts for player and wager amount |
 
 A `sample-questions.csv` with 25 ready-to-use questions is included.
-
----
-
-## Optional: Add HTTPS
-
-If you point a domain name at your VM's IP, you can get a free SSL cert:
-
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d yourdomain.com
-```
-
-Certbot edits your nginx config automatically and renews the cert on schedule.
