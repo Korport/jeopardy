@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { io } from 'socket.io-client';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? window.location.origin;
+const STORAGE_KEY = 'jeopardy-player';
 
 function playBuzz() {
   try {
@@ -28,48 +29,107 @@ export default function PlayerView() {
   const [gameState, setGameState] = useState(null);
   const [socketId, setSocketId] = useState(null);
   const [buzzing, setBuzzing] = useState(false);
+  const [rejoining, setRejoining] = useState(false);
+
   const socketRef = useRef(null);
   const wakeLockRef = useRef(null);
+  const keepAwakeCtxRef = useRef(null);
+  const autoJoinRef = useRef(null); // saved name to auto-join once socket connects
 
-  // Keep the screen awake while on this page
+  // On mount: check localStorage for a saved session matching this URL
   useEffect(() => {
-    if (!('wakeLock' in navigator)) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (saved?.sessionId === sessionId && saved?.name) {
+        autoJoinRef.current = saved.name;
+        setName(saved.name);
+        setRejoining(true);
+      }
+    } catch (_) {}
+  }, [sessionId]);
 
-    async function acquire() {
-      try {
-        wakeLockRef.current = await navigator.wakeLock.request('screen');
-      } catch (_) {}
-    }
-
-    // Browsers release the wake lock when the tab is hidden; re-acquire on return
-    function onVisibilityChange() {
-      if (document.visibilityState === 'visible') acquire();
-    }
-
-    acquire();
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      wakeLockRef.current?.release();
-    };
-  }, []);
-
+  // Socket connection
   useEffect(() => {
     const s = io(SERVER_URL);
     socketRef.current = s;
-    s.on('connect', () => setSocketId(s.id));
+
+    s.on('connect', () => {
+      setSocketId(s.id);
+      // Auto-rejoin if we found saved data
+      if (autoJoinRef.current) {
+        s.emit('join-session', { sessionId, name: autoJoinRef.current });
+        setJoined(true);
+        setRejoining(false);
+        autoJoinRef.current = null;
+      }
+    });
+
     s.on('reconnect', () => setSocketId(s.id));
     s.on('game-state', setGameState);
     s.on('buzz-event', ({ player }) => {
       if (player.socketId !== s.id) playBuzz();
     });
+
     return () => s.disconnect();
+  }, [sessionId]);
+
+  // Keep screen awake — tries Wake Lock API first, then falls back to a silent
+  // Web Audio loop. The audio approach must be started from a user gesture
+  // (the Join button tap) so we expose startKeepAwake() for that.
+  function startKeepAwake() {
+    // 1. Wake Lock API (needs HTTPS)
+    if ('wakeLock' in navigator) {
+      navigator.wakeLock.request('screen')
+        .then(lock => { wakeLockRef.current = lock; })
+        .catch(() => {});
+
+      function onVisibilityChange() {
+        if (document.visibilityState === 'visible' && 'wakeLock' in navigator) {
+          navigator.wakeLock.request('screen')
+            .then(lock => { wakeLockRef.current = lock; })
+            .catch(() => {});
+        }
+      }
+      document.addEventListener('visibilitychange', onVisibilityChange);
+    }
+
+    // 2. Silent audio loop fallback — works on HTTP and older browsers.
+    // Running an AudioContext at zero gain keeps many mobile browsers
+    // from sleeping even without Wake Lock API.
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = ctx.createConstantSource();
+      const gain = ctx.createGain();
+      gain.gain.value = 0; // completely silent
+      source.connect(gain);
+      gain.connect(ctx.destination);
+      source.start();
+      keepAwakeCtxRef.current = ctx;
+    } catch (_) {}
+  }
+
+  // Clean up audio context on unmount
+  useEffect(() => {
+    return () => {
+      keepAwakeCtxRef.current?.close();
+      wakeLockRef.current?.release();
+    };
   }, []);
 
   const joinSession = useCallback(() => {
     if (!name.trim()) return;
-    socketRef.current?.emit('join-session', { sessionId, name: name.trim() });
+    const trimmed = name.trim();
+
+    // Save to localStorage so we can rejoin on refresh
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ sessionId, name: trimmed }));
+    } catch (_) {}
+
+    socketRef.current?.emit('join-session', { sessionId, name: trimmed });
     setJoined(true);
+
+    // Start keep-awake from within the user gesture (button tap)
+    startKeepAwake();
   }, [sessionId, name]);
 
   const buzzIn = useCallback(() => {
@@ -86,6 +146,19 @@ export default function PlayerView() {
   const someoneElseBuzzed = gameState?.buzzedPlayer && !isBuzzedIn;
   const canBuzz = q && !gameState?.buzzersLocked;
 
+  // ── Auto-rejoin splash ──
+  if (rejoining) {
+    return (
+      <div className="min-h-screen bg-blue-950 flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="text-5xl mb-4 animate-spin">⟳</div>
+          <p className="text-blue-300 text-xl">Rejoining as <span className="text-yellow-400 font-bold">{name}</span>…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Join screen ──
   if (!joined) {
     return (
       <div className="min-h-screen bg-blue-950 flex items-center justify-center p-6">
@@ -118,8 +191,10 @@ export default function PlayerView() {
     );
   }
 
+  // ── In-game screen ──
   return (
     <div className="min-h-screen bg-blue-950 flex flex-col">
+      {/* Header */}
       <div className="bg-blue-900 border-b border-blue-700 px-6 py-4 flex justify-between items-center">
         <div className="text-white font-bold text-lg truncate">
           {myPlayer?.name ?? name}
@@ -129,6 +204,7 @@ export default function PlayerView() {
         </div>
       </div>
 
+      {/* Buzz area */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 gap-6">
         {!q ? (
           <div className="text-center">
@@ -151,7 +227,6 @@ export default function PlayerView() {
             <p className="text-blue-500 text-sm mt-3">Wait for the next opportunity…</p>
           </div>
         ) : gameState?.buzzersLocked ? (
-          /* Host hasn't opened buzzers yet */
           <div className="text-center">
             <div className="text-7xl mb-4 animate-pulse">🔒</div>
             <p className="text-blue-400 text-2xl font-bold mb-1">Stand by…</p>
@@ -185,6 +260,7 @@ export default function PlayerView() {
         )}
       </div>
 
+      {/* Leaderboard footer */}
       {gameState?.players && gameState.players.length > 1 && (
         <div className="bg-blue-900 border-t border-blue-700 px-6 py-3">
           <div className="text-blue-500 text-xs uppercase tracking-widest mb-2">Leaderboard</div>

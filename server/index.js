@@ -86,14 +86,28 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Invalid session ID' });
       return;
     }
+
+    const trimmedName = (name || '').trim() || `Player ${state.players.size + 1}`;
+
+    // Check if a player with this name already exists (page refresh / reconnect)
+    let restoredScore = 0;
+    for (const [oldId, existing] of state.players.entries()) {
+      if (existing.name.toLowerCase() === trimmedName.toLowerCase()) {
+        restoredScore = existing.score;
+        state.players.delete(oldId);
+        console.log(`Player rejoined: ${trimmedName} (score restored: ${restoredScore})`);
+        break;
+      }
+    }
+
     const player = {
       id: socket.id,
       socketId: socket.id,
-      name: (name || '').trim() || `Player ${state.players.size + 1}`,
-      score: 0,
+      name: trimmedName,
+      score: restoredScore,
     };
     state.players.set(socket.id, player);
-    console.log(`Player joined: ${player.name}`);
+    if (restoredScore === 0) console.log(`Player joined: ${trimmedName}`);
     broadcast();
   });
 
