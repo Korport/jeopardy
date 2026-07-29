@@ -27,21 +27,24 @@ export default function PlayerView() {
   const [joined, setJoined] = useState(false);
   const [name, setName] = useState('');
   const [gameState, setGameState] = useState(null);
-  const [socketId, setSocketId] = useState(null);
   const [buzzing, setBuzzing] = useState(false);
   const [rejoining, setRejoining] = useState(false);
 
   const socketRef = useRef(null);
   const wakeLockRef = useRef(null);
   const keepAwakeCtxRef = useRef(null);
-  const autoJoinRef = useRef(null); // saved name to auto-join once socket connects
+  const autoJoinRef = useRef(null); // saved name to auto-join once socket first connects
+  const nameRef = useRef('');       // current name, kept in sync for reconnect re-joins
+  const playerIdRef = useRef(null); // persistent identity — survives refresh AND reconnects
 
   // On mount: check localStorage for a saved session matching this URL
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
       if (saved?.sessionId === sessionId && saved?.name) {
+        playerIdRef.current = saved.playerId || null;
         autoJoinRef.current = saved.name;
+        nameRef.current = saved.name;
         setName(saved.name);
         setRejoining(true);
       }
@@ -54,20 +57,24 @@ export default function PlayerView() {
     socketRef.current = s;
 
     s.on('connect', () => {
-      setSocketId(s.id);
-      // Auto-rejoin if we found saved data
+      // (Re)join on every connect — this covers the very first join, a full
+      // page refresh, AND a transient socket drop (wifi blip, phone lock)
+      // that reconnects without remounting the page. Using the persistent
+      // playerId (not the ephemeral socket id) is what lets the server
+      // restore the same name/score instead of treating it as a new player.
       if (autoJoinRef.current) {
-        s.emit('join-session', { sessionId, name: autoJoinRef.current });
+        s.emit('join-session', { sessionId, name: autoJoinRef.current, playerId: playerIdRef.current });
         setJoined(true);
         setRejoining(false);
         autoJoinRef.current = null;
+      } else if (nameRef.current) {
+        s.emit('join-session', { sessionId, name: nameRef.current, playerId: playerIdRef.current });
       }
     });
 
-    s.on('reconnect', () => setSocketId(s.id));
     s.on('game-state', setGameState);
     s.on('buzz-event', ({ player }) => {
-      if (player.socketId !== s.id) playBuzz();
+      if (player.playerId !== playerIdRef.current) playBuzz();
     });
 
     return () => s.disconnect();
@@ -119,13 +126,20 @@ export default function PlayerView() {
   const joinSession = useCallback(() => {
     if (!name.trim()) return;
     const trimmed = name.trim();
+    nameRef.current = trimmed;
 
-    // Save to localStorage so we can rejoin on refresh
+    if (!playerIdRef.current) {
+      playerIdRef.current = crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    // Save to localStorage so we can rejoin on refresh (or a cold reconnect)
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ sessionId, name: trimmed }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ sessionId, name: trimmed, playerId: playerIdRef.current }));
     } catch (_) {}
 
-    socketRef.current?.emit('join-session', { sessionId, name: trimmed });
+    socketRef.current?.emit('join-session', { sessionId, name: trimmed, playerId: playerIdRef.current });
     setJoined(true);
 
     // Start keep-awake from within the user gesture (button tap)
@@ -140,9 +154,9 @@ export default function PlayerView() {
     setTimeout(() => setBuzzing(false), 400);
   }, [sessionId, gameState]);
 
-  const myPlayer = gameState?.players?.find(p => p.socketId === socketId);
+  const myPlayer = gameState?.players?.find(p => p.id === playerIdRef.current);
   const q = gameState?.currentQuestion;
-  const isBuzzedIn = gameState?.buzzedPlayer?.socketId === socketId;
+  const isBuzzedIn = gameState?.buzzedPlayer?.playerId === playerIdRef.current;
   const someoneElseBuzzed = gameState?.buzzedPlayer && !isBuzzedIn;
   const canBuzz = q && !gameState?.buzzersLocked;
 
@@ -270,9 +284,9 @@ export default function PlayerView() {
               .slice(0, 5)
               .map((p, i) => (
                 <div
-                  key={p.socketId}
+                  key={p.id}
                   className={`flex justify-between text-sm ${
-                    p.socketId === socketId ? 'text-yellow-400 font-bold' : 'text-blue-300'
+                    p.id === playerIdRef.current ? 'text-yellow-400 font-bold' : 'text-blue-300'
                   }`}
                 >
                   <span>{i + 1}. {p.name}</span>

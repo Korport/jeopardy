@@ -48,13 +48,13 @@ export default function HostBoard() {
   // Regular (non-DD) correct/wrong — uses buzzer player + question face value
   const handleCorrect = useCallback(() => {
     if (!gameState?.buzzedPlayer || !gameState?.currentQuestion) return;
-    awardPoints(gameState.buzzedPlayer.socketId, gameState.currentQuestion.value);
+    awardPoints(gameState.buzzedPlayer.playerId, gameState.currentQuestion.value);
     dismissQuestion();
   }, [gameState, awardPoints, dismissQuestion]);
 
   const handleWrong = useCallback(() => {
     if (!gameState?.buzzedPlayer || !gameState?.currentQuestion) return;
-    awardPoints(gameState.buzzedPlayer.socketId, -gameState.currentQuestion.value);
+    awardPoints(gameState.buzzedPlayer.playerId, -gameState.currentQuestion.value);
     unlockBuzzers();
   }, [gameState, awardPoints, unlockBuzzers]);
 
@@ -229,7 +229,7 @@ export default function HostBoard() {
                     >
                       <option value="">— Select a player —</option>
                       {gameState.players.map(p => (
-                        <option key={p.socketId} value={p.socketId}>
+                        <option key={p.id} value={p.id}>
                           {p.name} (${p.score.toLocaleString()})
                         </option>
                       ))}
@@ -280,7 +280,7 @@ export default function HostBoard() {
                       <span className="text-blue-300">
                         Player:{' '}
                         <span className="text-yellow-300 font-bold">
-                          {gameState.players.find(p => p.socketId === ddPlayerId)?.name ?? '—'}
+                          {gameState.players.find(p => p.id === ddPlayerId)?.name ?? '—'}
                         </span>
                       </span>
                       <span className="text-blue-300">

@@ -21,10 +21,13 @@ export default function Scoreboard({ players = [], onAwardPoints, currentQuestio
         <p className="text-blue-400 text-sm italic">No players connected</p>
       ) : (
         sorted.map((player, idx) => (
-          <div key={player.socketId} className="border-b border-blue-700 pb-2 last:border-0">
+          <div key={player.id} className={`border-b border-blue-700 pb-2 last:border-0 ${player.connected === false ? 'opacity-50' : ''}`}>
             <div className="flex justify-between items-center">
               <span className="text-white text-sm font-semibold truncate max-w-[120px]">
                 {idx + 1}. {player.name}
+                {player.connected === false && (
+                  <span className="ml-1.5 text-blue-400 text-xs font-normal italic">(disconnected)</span>
+                )}
               </span>
               <span className={`font-black text-sm tabular-nums ${player.score < 0 ? 'text-red-400' : 'text-yellow-400'}`}>
                 {player.score < 0 ? '-' : ''}${Math.abs(player.score).toLocaleString()}
@@ -34,13 +37,13 @@ export default function Scoreboard({ players = [], onAwardPoints, currentQuestio
             {currentQuestion && (
               <div className="flex gap-1 mt-1">
                 <button
-                  onClick={() => onAwardPoints(player.socketId, currentQuestion.value)}
+                  onClick={() => onAwardPoints(player.id, currentQuestion.value)}
                   className="flex-1 text-xs bg-green-700 hover:bg-green-600 active:bg-green-800 px-1 py-0.5 rounded font-bold"
                 >
                   +${currentQuestion.value}
                 </button>
                 <button
-                  onClick={() => onAwardPoints(player.socketId, -currentQuestion.value)}
+                  onClick={() => onAwardPoints(player.id, -currentQuestion.value)}
                   className="flex-1 text-xs bg-red-700 hover:bg-red-600 active:bg-red-800 px-1 py-0.5 rounded font-bold"
                 >
                   -${currentQuestion.value}
@@ -52,12 +55,12 @@ export default function Scoreboard({ players = [], onAwardPoints, currentQuestio
               <input
                 type="number"
                 placeholder="Custom"
-                value={customAmounts[player.socketId] || ''}
-                onChange={e => setCustomAmounts(prev => ({ ...prev, [player.socketId]: e.target.value }))}
+                value={customAmounts[player.id] || ''}
+                onChange={e => setCustomAmounts(prev => ({ ...prev, [player.id]: e.target.value }))}
                 className="w-full text-xs bg-blue-800 border border-blue-600 rounded px-1 py-0.5 text-white"
               />
-              <button onClick={() => handleCustomAward(player.socketId, 1)} className="text-xs bg-green-800 hover:bg-green-700 px-1.5 py-0.5 rounded font-bold">+</button>
-              <button onClick={() => handleCustomAward(player.socketId, -1)} className="text-xs bg-red-800 hover:bg-red-700 px-1.5 py-0.5 rounded font-bold">-</button>
+              <button onClick={() => handleCustomAward(player.id, 1)} className="text-xs bg-green-800 hover:bg-green-700 px-1.5 py-0.5 rounded font-bold">+</button>
+              <button onClick={() => handleCustomAward(player.id, -1)} className="text-xs bg-red-800 hover:bg-red-700 px-1.5 py-0.5 rounded font-bold">-</button>
             </div>
           </div>
         ))

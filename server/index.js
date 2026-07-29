@@ -43,7 +43,8 @@ const state = {
   localIP: getLocalIP(),
   port: Number(SERVER_PORT),
   questions: [],
-  players: new Map(),
+  players: new Map(), // keyed by persistent playerId (survives reconnects/refreshes)
+  socketToPlayer: new Map(), // socket.id -> playerId, for events that only carry a socket id
   playedCells: new Set(),
   currentQuestion: null,
   buzzedPlayer: null,
@@ -81,33 +82,49 @@ io.on('connection', (socket) => {
   console.log(`[+] ${socket.id}`);
   socket.emit('game-state', serialized());
 
-  socket.on('join-session', ({ sessionId, name }) => {
+  socket.on('join-session', ({ sessionId, name, playerId }) => {
     if (sessionId !== state.sessionId) {
       socket.emit('error', { message: 'Invalid session ID' });
       return;
     }
 
     const trimmedName = (name || '').trim() || `Player ${state.players.size + 1}`;
+    let id = playerId || null;
+    let player = id ? state.players.get(id) : null;
 
-    // Check if a player with this name already exists (page refresh / reconnect)
-    let restoredScore = 0;
-    for (const [oldId, existing] of state.players.entries()) {
-      if (existing.name.toLowerCase() === trimmedName.toLowerCase()) {
-        restoredScore = existing.score;
-        state.players.delete(oldId);
-        console.log(`Player rejoined: ${trimmedName} (score restored: ${restoredScore})`);
-        break;
+    // No record under this id (first-ever join, or localStorage was cleared) —
+    // fall back to matching a disconnected player by name so we don't orphan their score.
+    if (!player) {
+      for (const existing of state.players.values()) {
+        if (!existing.connected && existing.name.toLowerCase() === trimmedName.toLowerCase()) {
+          player = existing;
+          break;
+        }
+      }
+      if (player) {
+        if (id && id !== player.id) {
+          state.players.delete(player.id);
+          player.id = id;
+        } else {
+          id = player.id;
+        }
       }
     }
 
-    const player = {
-      id: socket.id,
-      socketId: socket.id,
-      name: trimmedName,
-      score: restoredScore,
-    };
-    state.players.set(socket.id, player);
-    if (restoredScore === 0) console.log(`Player joined: ${trimmedName}`);
+    if (!id) id = randomBytes(8).toString('hex');
+
+    if (player) {
+      player.name = trimmedName;
+      player.socketId = socket.id;
+      player.connected = true;
+      console.log(`Player rejoined: ${trimmedName} (score restored: ${player.score})`);
+    } else {
+      player = { id, socketId: socket.id, name: trimmedName, score: 0, connected: true };
+      console.log(`Player joined: ${trimmedName}`);
+    }
+
+    state.players.set(id, player);
+    state.socketToPlayer.set(socket.id, id);
     broadcast();
   });
 
@@ -115,10 +132,11 @@ io.on('connection', (socket) => {
     if (sessionId !== state.sessionId) return;
     if (state.buzzersLocked) return;
     if (!state.currentQuestion) return;
-    const player = state.players.get(socket.id);
+    const playerId = state.socketToPlayer.get(socket.id);
+    const player = playerId && state.players.get(playerId);
     if (!player) return;
 
-    state.buzzedPlayer = { socketId: socket.id, name: player.name };
+    state.buzzedPlayer = { playerId: player.id, name: player.name };
     state.buzzersLocked = true;
     broadcast();
     io.emit('buzz-event', { player: state.buzzedPlayer });
@@ -189,6 +207,7 @@ io.on('connection', (socket) => {
   socket.on('game-reset', () => {
     state.sessionId = generateSessionId();
     state.players = new Map();
+    state.socketToPlayer = new Map();
     state.playedCells = new Set();
     state.currentQuestion = null;
     state.buzzedPlayer = null;
@@ -198,16 +217,23 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log(`[-] ${socket.id}`);
-    if (state.players.has(socket.id)) {
-      const p = state.players.get(socket.id);
-      console.log(`Player left: ${p.name}`);
-      state.players.delete(socket.id);
-      if (state.buzzedPlayer?.socketId === socket.id) {
-        state.buzzedPlayer = null;
-        state.buzzersLocked = false;
-      }
-      broadcast();
+    const playerId = state.socketToPlayer.get(socket.id);
+    state.socketToPlayer.delete(socket.id);
+    if (!playerId) return;
+
+    const p = state.players.get(playerId);
+    // Guard against a stale disconnect firing after the player already
+    // reconnected on a new socket (e.g. a quick wifi blip or a second tab).
+    if (!p || p.socketId !== socket.id) return;
+
+    console.log(`Player disconnected: ${p.name} (score preserved: ${p.score})`);
+    p.connected = false;
+    p.socketId = null;
+    if (state.buzzedPlayer?.playerId === playerId) {
+      state.buzzedPlayer = null;
+      state.buzzersLocked = false;
     }
+    broadcast();
   });
 });
 
