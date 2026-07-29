@@ -1,0 +1,26 @@
+Category,Value,Question,Answer,DailyDouble
+Olympics,200,"This ancient Greek city gave its name to the Olympic Games","Olympia",false
+Olympics,400,"The number of interlocking rings on the Olympic flag","5",false
+Olympics,600,"This host city held the 2020 Summer Olympics, delayed a year by the pandemic","Tokyo",false
+Olympics,800,"This American swimmer holds the record for most Olympic gold medals ever won, with 23","Michael Phelps",false
+Olympics,1000,"This Jamaican sprinter won gold in the 100m at three consecutive Olympics: 2008, 2012, and 2016","Usain Bolt",true
+Basketball,200,"The number of players per team allowed on the court at one time in basketball","5",false
+Basketball,400,"This Chicago Bulls legend famously wore jersey number 23","Michael Jordan",false
+Basketball,600,"This term describes a shot made from beyond the arc","Three-pointer",false
+Basketball,800,"This franchise won its record 18th NBA championship in 2024, passing the Lakers","Boston Celtics",false
+Basketball,1000,"This Lakers center held the NBA's all-time scoring record until LeBron James passed him in 2023","Kareem Abdul-Jabbar",true
+Football,200,"The number of points awarded for a touchdown, before extra point or two-point conversion","6",false
+Football,400,"This trophy is awarded to the winning team of the Super Bowl","Vince Lombardi Trophy",false
+Football,600,"This quarterback has won more Super Bowl championships than any other player, with seven","Tom Brady",false
+Football,800,"This NFL team plays its home games at Lambeau Field","Green Bay Packers",false
+Football,1000,"This running back holds the NFL's all-time career rushing yards record","Emmitt Smith",true
+Baseball,200,"The number of players on a standard baseball team's defensive lineup on the field","9",false
+Baseball,400,"This term for a hit that clears the outfield fence and scores a run automatically","Home run",false
+Baseball,600,"This player held the MLB career home run record from 1974 until Barry Bonds broke it in 2007","Hank Aaron",false
+Baseball,800,"This best-of-seven series determines the MLB champion each year","World Series",false
+Baseball,1000,"This term describes a pitcher retiring every batter faced without allowing anyone to reach base","Perfect game",true
+Soccer,200,"The number of players per team on the field in soccer, including the goalkeeper","11",false
+Soccer,400,"This trophy is awarded to the winner of the FIFA World Cup","FIFA World Cup Trophy",false
+Soccer,600,"This country has won the most FIFA World Cup titles, with five","Brazil",false
+Soccer,800,"This Argentine star led his country to the 2022 World Cup title","Lionel Messi",false
+Soccer,1000,"This English stadium is nicknamed ""the home of football""","Wembley Stadium",true

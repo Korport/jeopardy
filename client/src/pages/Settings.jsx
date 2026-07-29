@@ -5,6 +5,31 @@ import { io } from 'socket.io-client';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? window.location.origin;
 
+const QUESTION_PACKS = [
+  { id: 'sports', label: 'Sports', emoji: '🏆', file: '/question-packs/sports.csv' },
+  { id: 'year-2000', label: 'Year 2000', emoji: '📼', file: '/question-packs/year-2000.csv' },
+  { id: 'pop-culture', label: 'Pop Culture', emoji: '🎬', file: '/question-packs/pop-culture.csv' },
+  { id: 'cartoons', label: 'Cartoons', emoji: '📺', file: '/question-packs/cartoons.csv' },
+];
+
+function mapRows(data) {
+  return data.map((row, i) => {
+    const cat = (row.Category ?? row.category ?? '').trim();
+    const val = parseInt(row.Value ?? row.value ?? '', 10);
+    const question = (row.Question ?? row.question ?? '').trim();
+    const answer = (row.Answer ?? row.answer ?? '').trim();
+    const ddRaw = (
+      row.DailyDouble ?? row.dailydouble ?? row['Daily Double'] ?? 'false'
+    ).toString().toLowerCase().trim();
+
+    if (!cat) throw new Error(`Row ${i + 1}: Missing Category`);
+    if (isNaN(val)) throw new Error(`Row ${i + 1}: Invalid Value "${row.Value ?? row.value}"`);
+    if (!question) throw new Error(`Row ${i + 1}: Missing Question`);
+
+    return { category: cat, value: val, question, answer, dailyDouble: ddRaw === 'true' };
+  });
+}
+
 export default function Settings() {
   const [socket, setSocket] = useState(null);
   const [gameState, setGameState] = useState(null);
@@ -12,6 +37,7 @@ export default function Settings() {
   const [parseError, setParseError] = useState(null);
   const [saved, setSaved] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [loadingPack, setLoadingPack] = useState(null);
 
   useEffect(() => {
     const s = io(SERVER_URL);
@@ -32,22 +58,7 @@ export default function Settings() {
       transformHeader: h => h.trim(),
       complete: ({ data }) => {
         try {
-          const questions = data.map((row, i) => {
-            const cat = (row.Category ?? row.category ?? '').trim();
-            const val = parseInt(row.Value ?? row.value ?? '', 10);
-            const question = (row.Question ?? row.question ?? '').trim();
-            const answer = (row.Answer ?? row.answer ?? '').trim();
-            const ddRaw = (
-              row.DailyDouble ?? row.dailydouble ?? row['Daily Double'] ?? 'false'
-            ).toString().toLowerCase().trim();
-
-            if (!cat) throw new Error(`Row ${i + 1}: Missing Category`);
-            if (isNaN(val)) throw new Error(`Row ${i + 1}: Invalid Value "${row.Value ?? row.value}"`);
-            if (!question) throw new Error(`Row ${i + 1}: Missing Question`);
-
-            return { category: cat, value: val, question, answer, dailyDouble: ddRaw === 'true' };
-          });
-          setParsedQuestions(questions);
+          setParsedQuestions(mapRows(data));
         } catch (err) {
           setParseError(err.message);
         }
@@ -62,6 +73,24 @@ export default function Settings() {
     e.preventDefault();
     setDragging(false);
     parseFile(e.dataTransfer.files[0]);
+  }
+
+  async function loadPack(pack) {
+    setParseError(null);
+    setSaved(false);
+    setParsedQuestions([]);
+    setLoadingPack(pack.id);
+    try {
+      const res = await fetch(pack.file);
+      if (!res.ok) throw new Error(`Couldn't load the ${pack.label} pack (HTTP ${res.status})`);
+      const text = await res.text();
+      const { data } = Papa.parse(text, { header: true, skipEmptyLines: true, transformHeader: h => h.trim() });
+      setParsedQuestions(mapRows(data));
+    } catch (err) {
+      setParseError(err.message);
+    } finally {
+      setLoadingPack(null);
+    }
   }
 
   function saveQuestions() {
@@ -113,6 +142,27 @@ export default function Settings() {
 
         <div className="bg-blue-900 rounded-xl p-6 border border-blue-700 space-y-4">
           <h2 className="text-xl font-bold">Upload Questions (CSV)</h2>
+
+          <div>
+            <p className="text-blue-300 text-sm mb-3">No file handy? Load a ready-made pack:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {QUESTION_PACKS.map(pack => (
+                <button
+                  key={pack.id}
+                  onClick={() => loadPack(pack)}
+                  disabled={loadingPack !== null}
+                  className="bg-blue-800 hover:bg-blue-700 border border-blue-600 rounded-xl p-4 text-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="text-3xl mb-1">{pack.emoji}</div>
+                  <div className="text-sm font-bold text-yellow-300">
+                    {loadingPack === pack.id ? 'Loading…' : pack.label}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-blue-300 text-sm">Or upload your own:</p>
 
           <div className="bg-blue-800 rounded-lg p-4 text-sm text-blue-200">
             <p className="font-semibold mb-1 text-blue-100">Expected CSV columns:</p>

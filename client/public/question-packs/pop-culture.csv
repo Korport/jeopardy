@@ -1,0 +1,26 @@
+Category,Value,Question,Answer,DailyDouble
+Movies,200,"This 1997 James Cameron film about a doomed ocean liner starred Leonardo DiCaprio and Kate Winslet","Titanic",false
+Movies,400,"This superhero franchise features Tony Stark, aka Iron Man","Marvel Cinematic Universe",false
+Movies,600,"This wizarding franchise, based on J.K. Rowling's novels, follows a boy who survives a curse as an infant","Harry Potter",false
+Movies,800,"This Pixar franchise centers on a group of sentient toys led by Woody and Buzz Lightyear","Toy Story",false
+Movies,1000,"This 2019 Marvel film became the highest-grossing film of all time, unadjusted, until Avatar later reclaimed the title","Avengers: Endgame",true
+Music,200,"This Barbadian singer's hits include ""Umbrella"" and ""Diamonds""","Rihanna",false
+Music,400,"This pop star's albums include ""1989"" and ""Folklore""","Taylor Swift",false
+Music,600,"This ""King of Pop"" released ""Thriller,"" the best-selling album of all time","Michael Jackson",false
+Music,800,"This K-pop group, formed by Big Hit Entertainment, became a global phenomenon with hits like ""Dynamite""","BTS",false
+Music,1000,"This Beyoncé visual album, released in 2016, features the hit single ""Formation""","Lemonade",true
+TV Shows,200,"This animated sitcom follows the Simpson family in the town of Springfield","The Simpsons",false
+TV Shows,400,"This fantasy series, based on George R.R. Martin's novels, is set in the Seven Kingdoms of Westeros","Game of Thrones",false
+TV Shows,600,"This sitcom follows six friends living in New York City, including Ross, Rachel, and Monica","Friends",false
+TV Shows,800,"This Netflix sci-fi series is set in the fictional town of Hawkins, Indiana, and features the ""Upside Down""","Stranger Things",false
+TV Shows,1000,"This AMC drama follows a chemistry teacher who turns to manufacturing methamphetamine","Breaking Bad",true
+Celebrities,200,"This actor plays Iron Man / Tony Stark in the Marvel Cinematic Universe","Robert Downey Jr.",false
+Celebrities,400,"This reality TV star and businesswoman founded the shapewear brand Skims","Kim Kardashian",false
+Celebrities,600,"This pop star and actress starred in ""A Star Is Born"" opposite Bradley Cooper","Lady Gaga",false
+Celebrities,800,"This member of the British royal family, married to Prince William, holds the title Princess of Wales","Catherine (Kate Middleton)",false
+Celebrities,1000,"This basketball legend's namesake shoe brand with Nike remains hugely popular decades after his playing career","Michael Jordan",true
+Internet & Memes,200,"This short-form video app, known for viral dance trends, is owned by the Chinese company ByteDance","TikTok",false
+Internet & Memes,400,"This term describes a humorous image, video, or idea that spreads rapidly online","Meme",false
+Internet & Memes,600,"This photo-sharing app, known for square photos and filters, was acquired by Facebook in 2012","Instagram",false
+Internet & Memes,800,"This video-sharing platform, founded in 2005, was acquired by Google the following year","YouTube",false
+Internet & Memes,1000,"This microblogging platform, founded in 2006, was rebranded ""X"" after Elon Musk's 2022 acquisition","Twitter",true

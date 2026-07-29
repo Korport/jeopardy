@@ -1,0 +1,26 @@
+Category,Value,Question,Answer,DailyDouble
+Classic Cartoons,200,"This wisecracking rabbit's catchphrase is ""What's up, Doc?""","Bugs Bunny",false
+Classic Cartoons,400,"This blue hedgehog is Sega's mascot and rival to Nintendo's Mario","Sonic the Hedgehog",false
+Classic Cartoons,600,"This prehistoric animated sitcom family lives in the town of Bedrock","The Flintstones",false
+Classic Cartoons,800,"This mostly wordless cat-and-mouse duo, created by Hanna-Barbera, is built around endless chases","Tom and Jerry",false
+Classic Cartoons,1000,"This Warner Bros. cartoon universe includes Daffy Duck, Porky Pig, and Elmer Fudd","Looney Tunes",true
+Disney,200,"This Disney princess loses a glass slipper at the ball","Cinderella",false
+Disney,400,"This 1994 Disney film follows a lion cub named Simba who becomes king of the Pride Lands","The Lion King",false
+Disney,600,"This Disney film features a snowman named Olaf and sisters Elsa and Anna","Frozen",false
+Disney,800,"This animated Disney film, based on a Hans Christian Andersen story, follows a mermaid who longs to be human","The Little Mermaid",false
+Disney,1000,"This Pixar film follows a rat named Remy who dreams of becoming a chef in Paris","Ratatouille",true
+Anime,200,"This anime and manga franchise follows a ninja named Naruto Uzumaki","Naruto",false
+Anime,400,"This Studio Ghibli film follows a girl named Chihiro who becomes trapped in a spirit world","Spirited Away",false
+Anime,600,"This anime franchise follows a pirate crew led by Monkey D. Luffy searching for a legendary treasure","One Piece",false
+Anime,800,"This anime follows Light Yagami, who finds a supernatural notebook that can kill anyone whose name is written in it","Death Note",false
+Anime,1000,"This Studio Ghibli filmmaker directed ""Spirited Away,"" ""My Neighbor Totoro,"" and ""Princess Mononoke""","Hayao Miyazaki",true
+Nickelodeon,200,"This yellow sponge lives in a pineapple under the sea in Bikini Bottom","SpongeBob SquarePants",false
+Nickelodeon,400,"This animated series follows a football-headed boy in the fictional city of Hillwood","Hey Arnold!",false
+Nickelodeon,600,"This series follows an airbending boy named Aang who must master all four elements","Avatar: The Last Airbender",false
+Nickelodeon,800,"This series follows a group of babies, including Tommy Pickles, who go on imaginative adventures","Rugrats",false
+Nickelodeon,1000,"This cartoon follows a paranoid, boat-driving wallaby and his exercise-loving steer friend Heffer","Rocko's Modern Life",true
+Cartoon Villains,200,"This Batman villain has a permanent smile and calls himself the Clown Prince of Crime","The Joker",false
+Cartoon Villains,400,"This ""Lion King"" villain, Simba's uncle, murders his brother Mufasa","Scar",false
+Cartoon Villains,600,"This ""101 Dalmatians"" villain wants to make a coat out of puppy fur","Cruella de Vil",false
+Cartoon Villains,800,"This Harry Potter villain is also known as ""He Who Must Not Be Named""","Voldemort",false
+Cartoon Villains,1000,"This Star Wars villain, father of Luke Skywalker, wears a black mask and cape","Darth Vader",true
