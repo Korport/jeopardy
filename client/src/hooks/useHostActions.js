@@ -3,14 +3,19 @@ import { useState, useCallback, useEffect } from 'react';
 // Shared host-control logic: question selection, buzzers, scoring, and the
 // Daily Double wager flow. Used by the main HostBoard screen and by a
 // designated player's phone (see HostControls + PlayerView).
+//
+// The Daily Double wager (which player, how much) is server-authoritative
+// (gameState.dd) once locked in, so the board and the host phone always
+// agree on it even though they're separate devices with separate instances
+// of this hook. `ddPlayerId`/`ddWager` here are just the local, in-progress
+// selection for the wager *input form* — they only matter on whichever
+// screen is actively being used to lock the wager in.
 export function useHostActions(socket, gameState) {
-  const [ddPhase, setDdPhase] = useState('wager'); // 'wager' | 'question'
   const [ddPlayerId, setDdPlayerId] = useState('');
   const [ddWager, setDdWager] = useState('');
 
-  // Reset DD state whenever a question opens or closes
+  // Reset the local wager form whenever a question opens or closes
   useEffect(() => {
-    setDdPhase('wager');
     setDdPlayerId('');
     setDdWager('');
   }, [gameState?.currentQuestion?.category, gameState?.currentQuestion?.value]);
@@ -44,23 +49,29 @@ export function useHostActions(socket, gameState) {
     unlockBuzzers();
   }, [gameState, awardPoints, unlockBuzzers]);
 
-  // Daily Double correct/wrong — uses chosen player + entered wager
+  // Daily Double: local input state for the wager form...
   const ddWagerAmount = parseInt(ddWager, 10) || 0;
 
   const handleDdLockIn = useCallback(() => {
     if (!ddPlayerId || ddWagerAmount <= 0) return;
-    setDdPhase('question');
-  }, [ddPlayerId, ddWagerAmount]);
+    emit('dd-lock-in', { playerId: ddPlayerId, wager: ddWagerAmount });
+  }, [ddPlayerId, ddWagerAmount, emit]);
+
+  // ...but correct/wrong always use the server-confirmed wager, since the
+  // lock-in may have happened on the other screen.
+  const ddPhase = gameState?.dd?.phase ?? 'wager';
+  const ddLockedPlayerId = gameState?.dd?.playerId ?? '';
+  const ddLockedWager = gameState?.dd?.wager ?? 0;
 
   const handleDdCorrect = useCallback(() => {
-    awardPoints(ddPlayerId, ddWagerAmount);
+    awardPoints(ddLockedPlayerId, ddLockedWager);
     dismissQuestion();
-  }, [ddPlayerId, ddWagerAmount, awardPoints, dismissQuestion]);
+  }, [ddLockedPlayerId, ddLockedWager, awardPoints, dismissQuestion]);
 
   const handleDdWrong = useCallback(() => {
-    awardPoints(ddPlayerId, -ddWagerAmount);
+    awardPoints(ddLockedPlayerId, -ddLockedWager);
     dismissQuestion();
-  }, [ddPlayerId, ddWagerAmount, awardPoints, dismissQuestion]);
+  }, [ddLockedPlayerId, ddLockedWager, awardPoints, dismissQuestion]);
 
   const resetGame = useCallback(() => emit('game-reset'), [emit]);
 
@@ -81,6 +92,8 @@ export function useHostActions(socket, gameState) {
     ddWager,
     setDdWager,
     ddWagerAmount,
+    ddLockedPlayerId,
+    ddLockedWager,
     handleDdLockIn,
     handleDdCorrect,
     handleDdWrong,

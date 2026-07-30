@@ -10,6 +10,7 @@ export default function HostControls({ gameState, actions, compact = false, priv
     selectQuestion, dismissQuestion, revealAnswer, unlockBuzzers, emit,
     handleCorrect, handleWrong,
     ddPhase, ddPlayerId, setDdPlayerId, ddWager, setDdWager, ddWagerAmount,
+    ddLockedPlayerId, ddLockedWager,
     handleDdLockIn, handleDdCorrect, handleDdWrong,
   } = actions;
 
@@ -165,13 +166,13 @@ export default function HostControls({ gameState, actions, compact = false, priv
                       <span className="text-blue-300">
                         Player:{' '}
                         <span className="text-yellow-300 font-bold">
-                          {gameState.players.find(p => p.id === ddPlayerId)?.name ?? '—'}
+                          {gameState.players.find(p => p.id === ddLockedPlayerId)?.name ?? '—'}
                         </span>
                       </span>
                       <span className="text-blue-300">
                         Wager:{' '}
                         <span className="text-yellow-300 font-bold">
-                          ${ddWagerAmount.toLocaleString()}
+                          ${ddLockedWager.toLocaleString()}
                         </span>
                       </span>
                     </div>
@@ -217,13 +218,13 @@ export default function HostControls({ gameState, actions, compact = false, priv
                         onClick={handleDdCorrect}
                         className="bg-green-600 hover:bg-green-500 text-white font-black px-4 py-2 rounded-xl transition-colors text-sm"
                       >
-                        ✓ Correct (+${ddWagerAmount.toLocaleString()})
+                        ✓ Correct (+${ddLockedWager.toLocaleString()})
                       </button>
                       <button
                         onClick={handleDdWrong}
                         className="bg-red-600 hover:bg-red-500 text-white font-black px-4 py-2 rounded-xl transition-colors text-sm"
                       >
-                        ✗ Wrong (−${ddWagerAmount.toLocaleString()})
+                        ✗ Wrong (−${ddLockedWager.toLocaleString()})
                       </button>
                     </>
                   ) : gameState.buzzedPlayer ? (

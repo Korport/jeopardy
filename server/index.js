@@ -50,6 +50,7 @@ const state = {
   buzzedPlayer: null,
   buzzersLocked: false,
   hostPlayerId: null, // player designated to run the game from their own phone
+  dd: { phase: 'wager', playerId: null, wager: 0 }, // Daily Double wager — server-authoritative so it stays in sync between the main board and the host phone
 };
 
 function serialized() {
@@ -64,6 +65,7 @@ function serialized() {
     buzzedPlayer: state.buzzedPlayer,
     buzzersLocked: state.buzzersLocked,
     hostPlayerId: state.hostPlayerId,
+    dd: state.dd,
   };
 }
 
@@ -170,6 +172,7 @@ io.on('connection', (socket) => {
     state.currentQuestion = { ...question, answerRevealed: false };
     state.buzzedPlayer = null;
     state.buzzersLocked = true; // host must explicitly open buzzers
+    state.dd = { phase: 'wager', playerId: null, wager: 0 };
     broadcast();
   });
 
@@ -181,6 +184,15 @@ io.on('connection', (socket) => {
     state.currentQuestion = null;
     state.buzzedPlayer = null;
     state.buzzersLocked = false;
+    state.dd = { phase: 'wager', playerId: null, wager: 0 };
+    broadcast();
+  });
+
+  socket.on('dd-lock-in', ({ playerId, wager }) => {
+    if (!state.players.has(playerId)) return;
+    const amount = Number(wager);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    state.dd = { phase: 'question', playerId, wager: amount };
     broadcast();
   });
 
@@ -204,6 +216,7 @@ io.on('connection', (socket) => {
     state.currentQuestion = null;
     state.buzzedPlayer = null;
     state.buzzersLocked = false;
+    state.dd = { phase: 'wager', playerId: null, wager: 0 };
     broadcast();
   });
 
@@ -221,6 +234,7 @@ io.on('connection', (socket) => {
     state.buzzedPlayer = null;
     state.buzzersLocked = false;
     state.hostPlayerId = null;
+    state.dd = { phase: 'wager', playerId: null, wager: 0 };
     broadcast();
   });
 
