@@ -49,6 +49,7 @@ const state = {
   currentQuestion: null,
   buzzedPlayer: null,
   buzzersLocked: false,
+  hostPlayerId: null, // player designated to run the game from their own phone
 };
 
 function serialized() {
@@ -62,6 +63,7 @@ function serialized() {
     currentQuestion: state.currentQuestion,
     buzzedPlayer: state.buzzedPlayer,
     buzzersLocked: state.buzzersLocked,
+    hostPlayerId: state.hostPlayerId,
   };
 }
 
@@ -190,6 +192,12 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('set-host-player', ({ playerId }) => {
+    if (playerId && !state.players.has(playerId)) return;
+    state.hostPlayerId = playerId || null;
+    broadcast();
+  });
+
   socket.on('upload-questions', ({ questions }) => {
     state.questions = questions;
     state.playedCells = new Set();
@@ -212,6 +220,7 @@ io.on('connection', (socket) => {
     state.currentQuestion = null;
     state.buzzedPlayer = null;
     state.buzzersLocked = false;
+    state.hostPlayerId = null;
     broadcast();
   });
 

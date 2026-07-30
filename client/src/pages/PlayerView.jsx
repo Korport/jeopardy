@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import HostControls from '../components/HostControls.jsx';
+import { useHostActions } from '../hooks/useHostActions.js';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? window.location.origin;
 const STORAGE_KEY = 'jeopardy-player';
@@ -29,6 +31,7 @@ export default function PlayerView() {
   const [gameState, setGameState] = useState(null);
   const [buzzing, setBuzzing] = useState(false);
   const [rejoining, setRejoining] = useState(false);
+  const [tab, setTab] = useState('host'); // 'host' | 'play' — only shown to the designated host player
 
   const socketRef = useRef(null);
   const wakeLockRef = useRef(null);
@@ -154,11 +157,14 @@ export default function PlayerView() {
     setTimeout(() => setBuzzing(false), 400);
   }, [sessionId, gameState]);
 
+  const hostActions = useHostActions(socketRef.current, gameState);
+
   const myPlayer = gameState?.players?.find(p => p.id === playerIdRef.current);
   const q = gameState?.currentQuestion;
   const isBuzzedIn = gameState?.buzzedPlayer?.playerId === playerIdRef.current;
   const someoneElseBuzzed = gameState?.buzzedPlayer && !isBuzzedIn;
   const canBuzz = q && !gameState?.buzzersLocked;
+  const isHostPlayer = Boolean(myPlayer && gameState?.hostPlayerId === myPlayer.id);
 
   // ── Auto-rejoin splash ──
   if (rejoining) {
@@ -218,6 +224,34 @@ export default function PlayerView() {
         </div>
       </div>
 
+      {/* Host / Play tab switcher — only shown to the designated host phone */}
+      {isHostPlayer && (
+        <div className="bg-blue-900 border-b border-blue-700 px-3 pt-2 flex gap-2">
+          <button
+            onClick={() => setTab('host')}
+            className={`flex-1 text-sm font-bold py-2 rounded-t-lg transition-colors ${
+              tab === 'host' ? 'bg-blue-950 text-yellow-400' : 'bg-blue-800 text-blue-300 hover:text-blue-100'
+            }`}
+          >
+            🎛 Host Controls
+          </button>
+          <button
+            onClick={() => setTab('play')}
+            className={`flex-1 text-sm font-bold py-2 rounded-t-lg transition-colors ${
+              tab === 'play' ? 'bg-blue-950 text-yellow-400' : 'bg-blue-800 text-blue-300 hover:text-blue-100'
+            }`}
+          >
+            🔴 Play
+          </button>
+        </div>
+      )}
+
+      {isHostPlayer && tab === 'host' ? (
+        <div className="flex-1 flex flex-col p-3 gap-3">
+          <HostControls gameState={gameState} actions={hostActions} compact privateAnswer />
+        </div>
+      ) : (
+      <>
       {/* Buzz area */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 gap-6">
         {!q ? (
@@ -297,6 +331,8 @@ export default function PlayerView() {
               ))}
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

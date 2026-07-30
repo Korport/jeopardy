@@ -98,6 +98,10 @@ export default function Settings() {
     setSaved(true);
   }
 
+  function setHostPlayer(playerId) {
+    socket?.emit('set-host-player', { playerId });
+  }
+
   function resetScores() {
     if (window.confirm('Reset all player scores to $0?')) socket?.emit('reset-scores');
   }
@@ -139,6 +143,51 @@ export default function Settings() {
             </dl>
           </div>
         )}
+
+        <div className="bg-blue-900 rounded-xl p-6 border border-blue-700 space-y-4">
+          <h2 className="text-xl font-bold">Host Phone</h2>
+          <p className="text-blue-300 text-sm">
+            Pick a player to co-host from their own phone: they get the board picker,
+            can privately see each answer, and can mark contestants correct/wrong —
+            without the answer showing on the main screen until "Reveal Answer" is pressed.
+          </p>
+
+          {!gameState?.players?.length ? (
+            <p className="text-blue-400 text-sm italic">No players connected yet</p>
+          ) : (
+            <div className="space-y-2">
+              {gameState.players.map(p => {
+                const isHost = gameState.hostPlayerId === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    className={`flex items-center justify-between rounded-lg px-4 py-2.5 border ${
+                      isHost ? 'bg-blue-800 border-yellow-400' : 'bg-blue-800/50 border-blue-700'
+                    } ${p.connected === false ? 'opacity-50' : ''}`}
+                  >
+                    <span className="font-semibold">
+                      {p.name}
+                      {p.connected === false && (
+                        <span className="ml-1.5 text-blue-400 text-xs font-normal italic">(disconnected)</span>
+                      )}
+                      {isHost && <span className="ml-2 text-yellow-300 text-xs font-bold">🎛 HOST PHONE</span>}
+                    </span>
+                    <button
+                      onClick={() => setHostPlayer(isHost ? null : p.id)}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${
+                        isHost
+                          ? 'bg-red-800 hover:bg-red-700'
+                          : 'bg-blue-700 hover:bg-blue-600'
+                      }`}
+                    >
+                      {isHost ? 'Remove' : 'Make Host Phone'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         <div className="bg-blue-900 rounded-xl p-6 border border-blue-700 space-y-4">
           <h2 className="text-xl font-bold">Upload Questions (CSV)</h2>
