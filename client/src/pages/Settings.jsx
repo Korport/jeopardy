@@ -10,6 +10,7 @@ const QUESTION_PACKS = [
   { id: 'year-2000', label: 'Year 2000', emoji: '📼', file: '/question-packs/year-2000.csv' },
   { id: 'pop-culture', label: 'Pop Culture', emoji: '🎬', file: '/question-packs/pop-culture.csv' },
   { id: 'cartoons', label: 'Cartoons', emoji: '📺', file: '/question-packs/cartoons.csv' },
+  { id: 'gulion', label: 'Gulion', emoji: '👶', file: '/question-packs/gulion.csv' },
 ];
 
 function mapRows(data) {
